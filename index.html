@@ -90,6 +90,8 @@
             justify-content: center;
             align-items: center;
             z-index: 10;
+            overflow-y: auto;
+            padding: 20px 0;
         }
 
         .overlay.hidden {
@@ -217,27 +219,25 @@
         /* Donate button */
         .btn-donate {
             display: inline-block;
-            margin-top: 15px;
+            margin-top: 20px;
             padding: 10px 25px;
             font-size: 14px;
-            background: transparent;
+            background: rgba(255, 215, 0, 0.1);
             color: #ffd700;
-            border: 1px solid #ffd700;
+            border: 2px solid #ffd700;
             border-radius: 4px;
             cursor: pointer;
             font-family: 'Courier New', monospace;
             letter-spacing: 2px;
             text-decoration: none;
             transition: all 0.2s;
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
-            opacity: 0.7;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
         }
 
         .btn-donate:hover {
             background: #ffd700;
             color: #000;
             box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
-            opacity: 1;
         }
 
         /* Mobile controls */
@@ -823,19 +823,18 @@
         }
 
         document.addEventListener('keydown', (e) => {
-            switch (e.key) {
-                case 'ArrowUp':    case 'w': case 'W': setDir(0, -1); break;
-                case 'ArrowDown':  case 's': case 'S': setDir(0, 1);  break;
-                case 'ArrowLeft':  case 'a': case 'A': setDir(-1, 0); break;
-                case 'ArrowRight': case 'd': case 'D': setDir(1, 0);  break;
-                case ' ':
-                    if (!document.getElementById('startOverlay').classList.contains('hidden')) return;
-                    if (!document.getElementById('gameOverOverlay').classList.contains('hidden')) return;
-                    togglePause();
-                    break;
-            }
+            // Use e.code for WASD so it works on any keyboard layout (UA, EN, etc.)
+            const code = e.code;
+            const key = e.key;
 
-            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+            if (key === 'ArrowUp'    || code === 'KeyW') { setDir(0, -1); e.preventDefault(); }
+            else if (key === 'ArrowDown'  || code === 'KeyS') { setDir(0, 1);  e.preventDefault(); }
+            else if (key === 'ArrowLeft'  || code === 'KeyA') { setDir(-1, 0); e.preventDefault(); }
+            else if (key === 'ArrowRight' || code === 'KeyD') { setDir(1, 0);  e.preventDefault(); }
+            else if (key === ' ') {
+                if (!document.getElementById('startOverlay').classList.contains('hidden')) return;
+                if (!document.getElementById('gameOverOverlay').classList.contains('hidden')) return;
+                togglePause();
                 e.preventDefault();
             }
         });
