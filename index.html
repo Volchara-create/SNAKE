@@ -43,13 +43,20 @@
         .score-board {
             display: flex;
             justify-content: center;
-            gap: 40px;
+            gap: 30px;
             margin-bottom: 10px;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
         }
 
         .score-board span {
             text-shadow: 0 0 5px #00ff41;
+        }
+
+        .level-indicator {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 5px;
+            height: 18px;
         }
 
         .pause-indicator {
@@ -73,7 +80,7 @@
             font-size: 0.8rem;
         }
 
-        /* Start / Game Over overlay */
+        /* Overlays */
         .overlay {
             position: fixed;
             top: 0; left: 0;
@@ -112,7 +119,8 @@
             height: 30px;
         }
 
-        .overlay-content button {
+        .overlay-content button,
+        .overlay-content .btn {
             background: transparent;
             border: 2px solid #00ff41;
             color: #00ff41;
@@ -123,12 +131,87 @@
             text-transform: uppercase;
             letter-spacing: 3px;
             transition: all 0.3s;
+            display: inline-block;
         }
 
-        .overlay-content button:hover {
+        .overlay-content button:hover,
+        .overlay-content .btn:hover {
             background: #00ff41;
             color: #0a0a0a;
             box-shadow: 0 0 20px #00ff41;
+        }
+
+        /* Settings section on start screen */
+        .settings-section {
+            margin: 25px 0;
+        }
+
+        .settings-label {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Level selector */
+        .level-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .level-btn {
+            background: transparent;
+            border: 2px solid #333;
+            color: #555;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            padding: 8px 18px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+        }
+
+        .level-btn:hover {
+            border-color: #00ff41;
+            color: #00ff41;
+        }
+
+        .level-btn.active {
+            border-color: #00ff41;
+            color: #00ff41;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+        }
+
+        /* Color selector */
+        .color-selector {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .color-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 3px solid #333;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .color-btn:hover {
+            transform: scale(1.15);
+        }
+
+        .color-btn.active {
+            border-color: #fff;
+            box-shadow: 0 0 12px currentColor;
+            transform: scale(1.15);
         }
 
         /* Mobile controls */
@@ -161,11 +244,14 @@
 
         @media (max-width: 600px) {
             h1 { font-size: 1.5rem; }
+            .overlay-content h2 { font-size: 2rem; }
             canvas {
                 width: 340px !important;
                 height: 340px !important;
             }
             .mobile-controls { display: block; }
+            .level-btn { font-size: 0.7rem; padding: 6px 12px; }
+            .color-btn { width: 30px; height: 30px; }
         }
     </style>
 </head>
@@ -175,8 +261,10 @@
         <div class="subtitle">// broken reality loading...</div>
         <div class="score-board">
             <span>SCORE: <span id="score">0</span></span>
+            <span>LEVEL: <span id="levelDisplay">1</span></span>
             <span>BEST: <span id="best">0</span></span>
         </div>
+        <div class="level-indicator" id="levelName"></div>
         <div class="pause-indicator" id="pauseText"></div>
         <canvas id="game" width="400" height="400"></canvas>
         <div class="controls-hint">WASD / Arrows | SPACE = pause</div>
@@ -198,7 +286,30 @@
     <div class="overlay" id="startOverlay">
         <div class="overlay-content">
             <h2>S N A K E</h2>
-            <p style="color:#555; margin-bottom:30px;">broken reality edition</p>
+            <p style="color:#555; margin-bottom:10px;">broken reality edition</p>
+
+            <div class="settings-section">
+                <div class="settings-label">Difficulty</div>
+                <div class="level-selector">
+                    <button class="level-btn" data-level="easy" onclick="selectLevel('easy')">Easy</button>
+                    <button class="level-btn active" data-level="normal" onclick="selectLevel('normal')">Normal</button>
+                    <button class="level-btn" data-level="hard" onclick="selectLevel('hard')">Hard</button>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-label">Snake Color</div>
+                <div class="color-selector" id="colorSelector">
+                    <div class="color-btn active" data-color="green" style="background: #00ff41;" onclick="selectColor('green')"></div>
+                    <div class="color-btn" data-color="cyan" style="background: #00e5ff;" onclick="selectColor('cyan')"></div>
+                    <div class="color-btn" data-color="purple" style="background: #bf00ff;" onclick="selectColor('purple')"></div>
+                    <div class="color-btn" data-color="orange" style="background: #ff8800;" onclick="selectColor('orange')"></div>
+                    <div class="color-btn" data-color="pink" style="background: #ff0080;" onclick="selectColor('pink')"></div>
+                    <div class="color-btn" data-color="gold" style="background: #ffd700;" onclick="selectColor('gold')"></div>
+                    <div class="color-btn" data-color="white" style="background: #ffffff;" onclick="selectColor('white')"></div>
+                </div>
+            </div>
+
             <button onclick="startGame()">START</button>
         </div>
     </div>
@@ -210,6 +321,9 @@
             <div class="final-score">Score: <span id="finalScore">0</span></div>
             <div class="new-record" id="newRecord"></div>
             <button onclick="startGame()">RETRY</button>
+            <div style="margin-top: 15px;">
+                <button onclick="showMenu()" style="font-size: 0.8rem; padding: 8px 20px; letter-spacing: 1px;">MENU</button>
+            </div>
         </div>
     </div>
 
@@ -221,19 +335,71 @@
         const COLS = canvas.width / CELL;
         const ROWS = canvas.height / CELL;
 
+        // === Difficulty levels ===
+        const LEVELS = {
+            easy:   { startSpeed: 200, minSpeed: 120, speedStep: 1, name: 'Easy',   levelUpEvery: 8 },
+            normal: { startSpeed: 150, minSpeed: 80,  speedStep: 2, name: 'Normal', levelUpEvery: 6 },
+            hard:   { startSpeed: 100, minSpeed: 50,  speedStep: 3, name: 'Hard',   levelUpEvery: 4 }
+        };
+
+        // === Snake color themes ===
+        const COLORS = {
+            green:  { r: 0,   g: 255, b: 65,  hex: '#00ff41' },
+            cyan:   { r: 0,   g: 229, b: 255, hex: '#00e5ff' },
+            purple: { r: 191, g: 0,   b: 255, hex: '#bf00ff' },
+            orange: { r: 255, g: 136, b: 0,   hex: '#ff8800' },
+            pink:   { r: 255, g: 0,   b: 128, hex: '#ff0080' },
+            gold:   { r: 255, g: 215, b: 0,   hex: '#ffd700' },
+            white:  { r: 220, g: 220, b: 220, hex: '#dcdcdc' }
+        };
+
         // === Game state ===
         let snake, dir, nextDir, food, score, bestScore, gameLoop, speed;
         let paused = false;
         let particles = [];
-        let eating = false;
-        let eatingTimer = 0;
+        let currentLevel = 'normal';
+        let currentColor = 'green';
+        let gameLevel = 1;
+        let foodEaten = 0;
+        let walls = [];
 
-        // Load best score
+        // Load saved settings
         bestScore = parseInt(localStorage.getItem('snakeBest') || '0');
+        currentLevel = localStorage.getItem('snakeLevel') || 'normal';
+        currentColor = localStorage.getItem('snakeColor') || 'green';
         document.getElementById('best').textContent = bestScore;
 
-        // === Particles (food eat effect) ===
-        function spawnParticles(x, y) {
+        // Apply saved settings to UI
+        document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+        const savedLevelBtn = document.querySelector(`.level-btn[data-level="${currentLevel}"]`);
+        if (savedLevelBtn) savedLevelBtn.classList.add('active');
+
+        document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+        const savedColorBtn = document.querySelector(`.color-btn[data-color="${currentColor}"]`);
+        if (savedColorBtn) savedColorBtn.classList.add('active');
+
+        // === UI Functions ===
+        function selectLevel(level) {
+            currentLevel = level;
+            localStorage.setItem('snakeLevel', level);
+            document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.level-btn[data-level="${level}"]`).classList.add('active');
+        }
+
+        function selectColor(color) {
+            currentColor = color;
+            localStorage.setItem('snakeColor', color);
+            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.color-btn[data-color="${color}"]`).classList.add('active');
+        }
+
+        function showMenu() {
+            document.getElementById('gameOverOverlay').classList.add('hidden');
+            document.getElementById('startOverlay').classList.remove('hidden');
+        }
+
+        // === Particles ===
+        function spawnParticles(x, y, color) {
             for (let i = 0; i < 8; i++) {
                 const angle = (Math.PI * 2 / 8) * i;
                 particles.push({
@@ -242,7 +408,8 @@
                     vx: Math.cos(angle) * 2.5,
                     vy: Math.sin(angle) * 2.5,
                     life: 15,
-                    maxLife: 15
+                    maxLife: 15,
+                    color: color || '#ff0040'
                 });
             }
         }
@@ -260,14 +427,56 @@
         function drawParticles() {
             particles.forEach(p => {
                 const alpha = p.life / p.maxLife;
-                ctx.fillStyle = `rgba(255, 0, 64, ${alpha})`;
-                ctx.shadowColor = '#ff0040';
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = p.color;
                 ctx.shadowBlur = 5;
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, 2 * alpha, 0, Math.PI * 2);
+                ctx.arc(p.x, p.y, 2.5 * alpha, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.shadowBlur = 0;
+                ctx.globalAlpha = 1;
             });
+        }
+
+        // === Generate walls for levels ===
+        function generateWalls(level) {
+            walls = [];
+            if (level < 2) return;
+
+            // Level 2: border pillars
+            if (level >= 2) {
+                // 4 small blocks in corners area
+                const positions = [
+                    { x: 5, y: 5 }, { x: 14, y: 5 },
+                    { x: 5, y: 14 }, { x: 14, y: 14 }
+                ];
+                positions.forEach(p => walls.push(p));
+            }
+
+            // Level 3: cross-shaped obstacles
+            if (level >= 3) {
+                for (let i = 7; i <= 12; i++) {
+                    walls.push({ x: i, y: 3 });
+                    walls.push({ x: i, y: 16 });
+                }
+            }
+
+            // Level 4: side walls
+            if (level >= 4) {
+                for (let i = 6; i <= 13; i++) {
+                    walls.push({ x: 3, y: i });
+                    walls.push({ x: 16, y: i });
+                }
+            }
+
+            // Level 5+: maze-like extra walls
+            if (level >= 5) {
+                for (let i = 8; i <= 11; i++) {
+                    walls.push({ x: i, y: 8 });
+                    walls.push({ x: i, y: 11 });
+                }
+            }
         }
 
         // === Init / Start ===
@@ -277,6 +486,8 @@
             document.getElementById('pauseText').textContent = '';
             paused = false;
 
+            const lvl = LEVELS[currentLevel];
+
             snake = [
                 { x: 10, y: 10 },
                 { x: 9, y: 10 },
@@ -285,10 +496,16 @@
             dir = { x: 1, y: 0 };
             nextDir = { x: 1, y: 0 };
             score = 0;
-            speed = 120;
+            gameLevel = 1;
+            foodEaten = 0;
+            speed = lvl.startSpeed;
             particles = [];
-            document.getElementById('score').textContent = score;
 
+            document.getElementById('score').textContent = score;
+            document.getElementById('levelDisplay').textContent = gameLevel;
+            document.getElementById('levelName').textContent = lvl.name;
+
+            generateWalls(gameLevel);
             spawnFood();
 
             if (gameLoop) clearInterval(gameLoop);
@@ -303,7 +520,10 @@
                     x: Math.floor(Math.random() * COLS),
                     y: Math.floor(Math.random() * ROWS)
                 };
-            } while (snake.some(s => s.x === pos.x && s.y === pos.y));
+            } while (
+                snake.some(s => s.x === pos.x && s.y === pos.y) ||
+                walls.some(w => w.x === pos.x && w.y === pos.y)
+            );
             food = pos;
         }
 
@@ -325,13 +545,36 @@
         function drawPauseOverlay() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#00ff41';
+            ctx.fillStyle = COLORS[currentColor].hex;
             ctx.font = '24px Courier New';
             ctx.textAlign = 'center';
-            ctx.shadowColor = '#00ff41';
+            ctx.shadowColor = COLORS[currentColor].hex;
             ctx.shadowBlur = 10;
             ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
             ctx.shadowBlur = 0;
+        }
+
+        // === Level up ===
+        function levelUp() {
+            const lvl = LEVELS[currentLevel];
+            gameLevel++;
+            document.getElementById('levelDisplay').textContent = gameLevel;
+
+            // Flash effect
+            spawnParticles(10, 10, COLORS[currentColor].hex);
+            spawnParticles(5, 5, '#ffcc00');
+            spawnParticles(15, 15, '#ffcc00');
+
+            generateWalls(gameLevel);
+
+            // Make sure snake and food are not on walls
+            if (walls.some(w => snake.some(s => s.x === w.x && s.y === w.y))) {
+                // If snake overlaps wall, remove those wall segments
+                walls = walls.filter(w => !snake.some(s => s.x === w.x && s.y === w.y));
+            }
+            if (walls.some(w => w.x === food.x && w.y === food.y)) {
+                spawnFood();
+            }
         }
 
         // === Main tick ===
@@ -343,8 +586,13 @@
                 y: snake[0].y + dir.y
             };
 
-            // Wall collision
+            // Wall collision (borders)
             if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
+                return gameOver();
+            }
+
+            // Wall collision (obstacles)
+            if (walls.some(w => w.x === head.x && w.y === head.y)) {
                 return gameOver();
             }
 
@@ -358,17 +606,24 @@
             // Check food
             if (head.x === food.x && head.y === food.y) {
                 score++;
+                foodEaten++;
                 document.getElementById('score').textContent = score;
-                eating = true;
-                eatingTimer = 5;
 
-                spawnParticles(food.x, food.y);
+                spawnParticles(food.x, food.y, '#ff0040');
 
-                // Speed up
-                if (speed > 60) {
-                    speed -= 2;
+                const lvl = LEVELS[currentLevel];
+
+                // Speed up slightly
+                if (speed > lvl.minSpeed) {
+                    speed -= lvl.speedStep;
                     clearInterval(gameLoop);
                     gameLoop = setInterval(tick, speed);
+                }
+
+                // Level up check
+                if (foodEaten >= lvl.levelUpEvery && gameLevel < 5) {
+                    foodEaten = 0;
+                    levelUp();
                 }
 
                 spawnFood();
@@ -376,26 +631,40 @@
                 snake.pop();
             }
 
-            if (eatingTimer > 0) eatingTimer--;
-            else eating = false;
-
             updateParticles();
             draw();
         }
 
         // === Drawing ===
         function draw() {
+            const clr = COLORS[currentColor];
+
             // Clear canvas
             ctx.fillStyle = '#0a0a0a';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Subtle grid
-            ctx.strokeStyle = 'rgba(0, 255, 65, 0.03)';
+            ctx.strokeStyle = `rgba(${clr.r}, ${clr.g}, ${clr.b}, 0.03)`;
             for (let x = 0; x < COLS; x++) {
                 for (let y = 0; y < ROWS; y++) {
                     ctx.strokeRect(x * CELL, y * CELL, CELL, CELL);
                 }
             }
+
+            // Draw walls
+            walls.forEach(w => {
+                ctx.fillStyle = '#444';
+                ctx.shadowColor = '#666';
+                ctx.shadowBlur = 4;
+                roundRect(ctx, w.x * CELL + 1, w.y * CELL + 1, CELL - 2, CELL - 2, 3);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // Wall inner pattern
+                ctx.strokeStyle = '#555';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(w.x * CELL + 4, w.y * CELL + 4, CELL - 8, CELL - 8);
+            });
 
             // Draw food (pulsing)
             const pulse = 1 + Math.sin(Date.now() / 150) * 0.15;
@@ -413,18 +682,19 @@
             ctx.fill();
             ctx.shadowBlur = 0;
 
-            // Draw snake body (rounded segments)
+            // Draw snake
             for (let i = snake.length - 1; i >= 0; i--) {
                 const seg = snake[i];
                 const brightness = 1 - (i / snake.length) * 0.6;
-                const g = Math.floor(255 * brightness);
-                const b = Math.floor(65 * brightness);
+                const r = Math.floor(clr.r * brightness);
+                const g = Math.floor(clr.g * brightness);
+                const b = Math.floor(clr.b * brightness);
 
                 if (i === 0) {
-                    // Head — slightly larger with glow
-                    ctx.shadowColor = '#00ff41';
+                    // Head
+                    ctx.shadowColor = clr.hex;
                     ctx.shadowBlur = 10;
-                    ctx.fillStyle = `rgb(0, ${g}, ${b})`;
+                    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
 
                     const hx = seg.x * CELL;
                     const hy = seg.y * CELL;
@@ -432,11 +702,10 @@
                     ctx.fill();
                     ctx.shadowBlur = 0;
 
-                    // Draw eyes
                     drawEyes(seg, dir);
                 } else {
-                    // Body segments
-                    ctx.fillStyle = `rgb(0, ${g}, ${b})`;
+                    // Body
+                    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
                     const sx = seg.x * CELL;
                     const sy = seg.y * CELL;
                     roundRect(ctx, sx + 1.5, sy + 1.5, CELL - 3, CELL - 3, 4);
@@ -444,7 +713,6 @@
                 }
             }
 
-            // Draw particles
             drawParticles();
         }
 
@@ -455,21 +723,20 @@
 
             let eye1, eye2;
 
-            if (direction.x === 1) { // right
+            if (direction.x === 1) {
                 eye1 = { x: cx + 4, y: cy - 4 };
                 eye2 = { x: cx + 4, y: cy + 4 };
-            } else if (direction.x === -1) { // left
+            } else if (direction.x === -1) {
                 eye1 = { x: cx - 4, y: cy - 4 };
                 eye2 = { x: cx - 4, y: cy + 4 };
-            } else if (direction.y === -1) { // up
+            } else if (direction.y === -1) {
                 eye1 = { x: cx - 4, y: cy - 4 };
                 eye2 = { x: cx + 4, y: cy - 4 };
-            } else { // down
+            } else {
                 eye1 = { x: cx - 4, y: cy + 4 };
                 eye2 = { x: cx + 4, y: cy + 4 };
             }
 
-            // White of eye
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
             ctx.arc(eye1.x, eye1.y, 3, 0, Math.PI * 2);
@@ -478,7 +745,6 @@
             ctx.arc(eye2.x, eye2.y, 3, 0, Math.PI * 2);
             ctx.fill();
 
-            // Pupil
             ctx.fillStyle = '#0a0a0a';
             ctx.beginPath();
             ctx.arc(eye1.x + direction.x, eye1.y + direction.y, 1.5, 0, Math.PI * 2);
@@ -488,7 +754,7 @@
             ctx.fill();
         }
 
-        // === Rounded rectangle helper ===
+        // === Rounded rectangle ===
         function roundRect(ctx, x, y, w, h, r) {
             ctx.beginPath();
             ctx.moveTo(x + r, y);
@@ -545,7 +811,7 @@
             }
         });
 
-        // === Swipe controls for mobile ===
+        // === Swipe controls ===
         let touchStartX = 0;
         let touchStartY = 0;
 
