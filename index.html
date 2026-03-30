@@ -52,13 +52,6 @@
             text-shadow: 0 0 5px #00ff41;
         }
 
-        .level-indicator {
-            font-size: 0.8rem;
-            color: #888;
-            margin-bottom: 5px;
-            height: 18px;
-        }
-
         .pause-indicator {
             color: #ffcc00;
             font-size: 0.9rem;
@@ -287,10 +280,8 @@
         <div class="subtitle">// broken reality loading...</div>
         <div class="score-board">
             <span>SCORE: <span id="score">0</span></span>
-            <span>LEVEL: <span id="levelDisplay">1</span></span>
             <span>BEST: <span id="best">0</span></span>
         </div>
-        <div class="level-indicator" id="levelName"></div>
         <div class="pause-indicator" id="pauseText"></div>
         <canvas id="game" width="400" height="400"></canvas>
         <div class="controls-hint">WASD / Arrows | SPACE = pause</div>
@@ -531,8 +522,6 @@
             particles = [];
 
             document.getElementById('score').textContent = score;
-            document.getElementById('levelDisplay').textContent = gameLevel;
-            document.getElementById('levelName').textContent = lvl.name;
 
             generateWalls(gameLevel);
             spawnFood();
@@ -587,7 +576,6 @@
         function levelUp() {
             const lvl = LEVELS[currentLevel];
             gameLevel++;
-            document.getElementById('levelDisplay').textContent = gameLevel;
 
             // Flash effect
             spawnParticles(10, 10, COLORS[currentColor].hex);
