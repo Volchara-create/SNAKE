@@ -233,6 +233,59 @@
             box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
         }
 
+        /* === GLITCH / BROKEN REALITY EFFECTS === */
+
+        /* CRT scanlines overlay */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.07) 2px,
+                rgba(0, 0, 0, 0.07) 4px
+            );
+            pointer-events: none;
+            z-index: 5;
+            mix-blend-mode: multiply;
+        }
+
+        /* Screen shake animation */
+        @keyframes glitch-shake {
+            0%,100% { transform: translate(0,0) skewX(0deg); }
+            15%     { transform: translate(-4px, 2px) skewX(1.5deg); }
+            30%     { transform: translate(4px,-2px) skewX(-1deg); }
+            45%     { transform: translate(-3px, 3px) skewX(2deg); }
+            60%     { transform: translate(3px,-1px) skewX(-1.5deg); }
+            75%     { transform: translate(-2px, 2px) skewX(0.5deg); }
+            90%     { transform: translate(2px,-2px) skewX(-0.5deg); }
+        }
+
+        /* Chromatic aberration / RGB split */
+        @keyframes chroma-aberration {
+            0%,100% { filter: none; }
+            25%     { filter: drop-shadow(4px 0 0 rgba(255,0,0,0.8)) drop-shadow(-4px 0 0 rgba(0,255,255,0.8)); }
+            50%     { filter: drop-shadow(-5px 1px 0 rgba(255,0,0,0.6)) drop-shadow(5px -1px 0 rgba(0,255,255,0.6)) brightness(1.15); }
+            75%     { filter: drop-shadow(3px 2px 0 rgba(255,0,0,0.7)) drop-shadow(-3px -2px 0 rgba(0,255,255,0.7)); }
+        }
+
+        /* Death flash */
+        @keyframes death-flash {
+            0%   { filter: none; }
+            20%  { filter: invert(1) brightness(3) contrast(2); }
+            40%  { filter: hue-rotate(180deg) brightness(2); }
+            60%  { filter: invert(1) saturate(3); }
+            80%  { filter: hue-rotate(90deg) brightness(1.5); }
+            100% { filter: none; }
+        }
+
+        /* CSS classes toggled by JS */
+        canvas.anim-shake  { animation: glitch-shake 0.18s steps(1,end) 2; }
+        canvas.anim-chroma { animation: chroma-aberration 0.45s steps(1,end); }
+        canvas.anim-death  { animation: death-flash 0.6s ease-out forwards; }
+
         /* Mobile controls */
         .mobile-controls {
             display: none;
@@ -275,6 +328,9 @@
     </style>
 </head>
 <body>
+    <!-- CRT scanlines overlay -->
+    <div class="scanlines"></div>
+
     <div class="game-container">
         <h1>S N A K E</h1>
         <div class="score-board">
@@ -380,6 +436,31 @@
         let gameLevel = 1;
         let foodEaten = 0;
         let walls = [];
+
+        // === GLITCH SYSTEM STATE ===
+        let glitchMsg = null;
+        let glitchMsgTimer = 0;
+        let glitchMsgY = 200;
+        let glitchLineTimer = 0;
+        let speedBurstActive = false;
+
+        const GLITCH_MSGS = [
+            'BUFFER OVERFLOW',
+            'SEGFAULT: 0x0000DEAD',
+            'SNAKE.EXE STOPPED',
+            'MEMORY CORRUPTION DETECTED',
+            'NULL POINTER EXCEPTION',
+            'ACCESS DENIED',
+            'FATAL ERROR #4040',
+            'REALITY.EXE NOT FOUND',
+            '\u2593\u2592\u2591 G L I T C H \u2591\u2592\u2593',
+            'CHEATING DETECTED',
+            '404: APPLE NOT FOUND',
+            'SNAKE IS NOT REAL',
+            'YOU ARE STILL ALIVE?',
+            'WARNING: LOW SANITY',
+            'RESTART RECOMMENDED',
+        ];
 
         // Load saved settings
         bestScore = parseInt(localStorage.getItem('snakeBest') || '0');
@@ -497,6 +578,64 @@
             }
         }
 
+        // === GLITCH FUNCTIONS ===
+
+        // Trigger CSS shake animation
+        function screenShake() {
+            canvas.classList.remove('anim-shake');
+            void canvas.offsetWidth; // force reflow to restart animation
+            canvas.classList.add('anim-shake');
+            setTimeout(() => canvas.classList.remove('anim-shake'), 400);
+        }
+
+        // Trigger CSS chromatic aberration
+        function triggerChromatic() {
+            canvas.classList.remove('anim-chroma');
+            void canvas.offsetWidth;
+            canvas.classList.add('anim-chroma');
+            setTimeout(() => canvas.classList.remove('anim-chroma'), 700);
+        }
+
+        // Show glitch error message on canvas
+        function showGlitchMsg(text) {
+            glitchMsg = text;
+            glitchMsgTimer = 70;
+            glitchMsgY = 70 + Math.floor(Math.random() * (canvas.height - 140));
+        }
+
+        // Random glitch trigger
+        function triggerRandomGlitch() {
+            const roll = Math.random();
+            if (roll < 0.28) {
+                showGlitchMsg(GLITCH_MSGS[Math.floor(Math.random() * GLITCH_MSGS.length)]);
+            } else if (roll < 0.48) {
+                triggerChromatic();
+            } else if (roll < 0.63) {
+                screenShake();
+            } else if (roll < 0.75) {
+                // Glitch lines
+                glitchLineTimer = 6 + Math.floor(Math.random() * 10);
+            } else if (roll < 0.85 && !speedBurstActive) {
+                // Speed burst — briefly triples speed
+                speedBurstActive = true;
+                const burstSpeed = Math.max(25, Math.floor(speed / 3.5));
+                clearInterval(gameLoop);
+                gameLoop = setInterval(tick, burstSpeed);
+                setTimeout(() => {
+                    speedBurstActive = false;
+                    if (!paused) {
+                        clearInterval(gameLoop);
+                        gameLoop = setInterval(tick, speed);
+                    }
+                }, 350 + Math.random() * 350);
+            }
+        }
+
+        // Called every tick — small random chance to trigger a glitch
+        function maybeGlitch() {
+            if (Math.random() < 0.014) triggerRandomGlitch();
+        }
+
         // === Init / Start ===
         function startGame() {
             document.getElementById('startOverlay').classList.add('hidden');
@@ -518,6 +657,11 @@
             foodEaten = 0;
             speed = lvl.startSpeed;
             particles = [];
+            glitchMsg = null;
+            glitchMsgTimer = 0;
+            glitchLineTimer = 0;
+            speedBurstActive = false;
+            canvas.className = ''; // clear any lingering CSS animations
 
             document.getElementById('score').textContent = score;
 
@@ -594,6 +738,7 @@
 
         // === Main tick ===
         function tick() {
+            maybeGlitch(); // random glitch events
             dir = { ...nextDir };
 
             const head = {
@@ -625,6 +770,11 @@
                 document.getElementById('score').textContent = score;
 
                 spawnParticles(food.x, food.y, '#ff0040');
+
+                // Glitch effects on food eat
+                if (Math.random() < 0.45) screenShake();
+                if (Math.random() < 0.2) triggerChromatic();
+                if (Math.random() < 0.12) showGlitchMsg(GLITCH_MSGS[Math.floor(Math.random() * GLITCH_MSGS.length)]);
 
                 const lvl = LEVELS[currentLevel];
 
@@ -729,6 +879,57 @@
             }
 
             drawParticles();
+
+            // === GLITCH OVERLAY EFFECTS ===
+
+            // Horizontal glitch lines — copy strips of canvas to shifted positions
+            if (glitchLineTimer > 0) {
+                glitchLineTimer--;
+                const numSlices = 2 + Math.floor(Math.random() * 4);
+                for (let i = 0; i < numSlices; i++) {
+                    const sy = Math.floor(Math.random() * (canvas.height - 30));
+                    const sh = 3 + Math.floor(Math.random() * 20);
+                    const dx = (Math.random() - 0.5) * 50;
+                    ctx.drawImage(canvas, 0, sy, canvas.width, sh, dx, sy, canvas.width, sh);
+                }
+            }
+
+            // Glitch error message on canvas
+            if (glitchMsg && glitchMsgTimer > 0) {
+                glitchMsgTimer--;
+                const alpha = Math.min(1, glitchMsgTimer / 12) * 0.9;
+                const jitter = (Math.random() - 0.5) * 10;
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.font = `bold ${11 + Math.floor(Math.random() * 5)}px Courier New`;
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#ff2200';
+                ctx.shadowColor = '#ff2200';
+                ctx.shadowBlur = 18;
+                ctx.fillText(glitchMsg, canvas.width / 2 + jitter, glitchMsgY);
+                // Second shifted copy for chroma feel
+                ctx.globalAlpha = alpha * 0.4;
+                ctx.fillStyle = '#00ffff';
+                ctx.shadowColor = '#00ffff';
+                ctx.fillText(glitchMsg, canvas.width / 2 + jitter + 3, glitchMsgY + 1);
+                ctx.restore();
+                if (glitchMsgTimer <= 0) glitchMsg = null;
+            }
+
+            // Sparse TV noise pixels
+            if (Math.random() < 0.25) {
+                const noiseCount = 5 + Math.floor(Math.random() * 18);
+                ctx.save();
+                ctx.globalAlpha = 0.45;
+                for (let i = 0; i < noiseCount; i++) {
+                    const nx = Math.floor(Math.random() * canvas.width);
+                    const ny = Math.floor(Math.random() * canvas.height);
+                    const ns = 1 + Math.floor(Math.random() * 3);
+                    ctx.fillStyle = Math.random() < 0.6 ? '#ffffff' : '#ff0033';
+                    ctx.fillRect(nx, ny, ns, ns);
+                }
+                ctx.restore();
+            }
         }
 
         // === Draw snake eyes ===
@@ -788,6 +989,13 @@
         function gameOver() {
             clearInterval(gameLoop);
             gameLoop = null;
+
+            // Dramatic death glitch effects
+            screenShake();
+            triggerChromatic();
+            canvas.classList.add('anim-death');
+            setTimeout(() => canvas.classList.remove('anim-death'), 800);
+            showGlitchMsg('FATAL ERROR');
 
             let isNewRecord = false;
             if (score > bestScore) {
